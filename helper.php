@@ -110,3 +110,36 @@ function redirect($url)
   header('Location: ' . $url);
   exit;
 }
+
+/**
+ * Upload image
+ * 
+ * @param file $file
+ * @return mixed
+ */
+
+function uploadImage($file)
+{
+  if ($file['error'] === UPLOAD_ERR_OK) {
+    //Specify Where to upload
+    $uploadDir = 'uploads/';
+    //Check or create dir
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+    //Create filename
+    $filename = uniqid() . '-' . $file['name'];
+
+    //Check file type
+    $allowedExtensions = ['jpg', 'jpeg', 'png'];
+    $fileExtension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    //Make sure extension is allowed
+    if (in_array($fileExtension, $allowedExtensions)) {
+      //Upload file
+      if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+        return ['message' => 'File Uploaded', 'path' => $uploadDir . $filename];
+      } else {
+        return 'File Uploaded Error: ' . $file['error'];
+      }
+    } else echo 'Invalid File Type';
+  }
+}

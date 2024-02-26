@@ -22,6 +22,9 @@ loadPartial('top-banner');
         <div class="rounded-lg shadow-md bg-white">
           <div class="p-4">
             <h2 class="text-xl font-semibold"><?= $listing->title ?></h2>
+            <?php if ($listing->image) : ?>
+              <img src="<?= $listing->image ?>" alt="<?= $listing->title ?>" class="rounded">
+            <?php endif ?>
             <p class="text-gray-700 text-lg mt-2">
               <?= $listing->description ?>
             </p>

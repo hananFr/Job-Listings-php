@@ -76,11 +76,23 @@ class ListingsController
 
     $newListingData = array_intersect_key($_POST, array_flip($allowedFields));
 
+    $errors = [];
+
+    $file = $_FILES['image'] ?? null;
+
+    if ($file && $file['name']) {
+
+      $image = uploadImage($file);
+
+      if (is_string($image)) {
+        $errors['image'] = $image;
+      } else $newListingData['image'] = $image['path'];
+    } else $errors['image'] = 'Image is required';
+
     $newListingData['user_id'] = Session::get('user')["id"];
 
     $newListingData = array_map('sanitize', $newListingData);
 
-    $errors = [];
 
     foreach ($requiredFields as $field) {
       if (empty($newListingData[$field]) || !Validation::string($newListingData[$field])) {
@@ -182,13 +194,16 @@ class ListingsController
   {
     $id = $params['id'] ?? '';
 
-    $listing = $this->db->query('SELECT * FROM listings WHERE id = :id', $params);
+    $listing = $this->db->query('SELECT * FROM listings WHERE id = :id', $params)->fetch();
+
+    $oldImage = $listing->image ?? '';
 
     if (!$listing) {
       ErrorsController::notFound('Listing not found');
     }
 
     // Authorization
+
     if (!Authorization::isOwner($listing->user_id)) {
       Session::setFlashMessage('error_message', 'You are not authoirzed to update this listing');
       return redirect('/listings/' . $listing->id);
@@ -204,9 +219,23 @@ class ListingsController
 
     $updateValues = array_map('sanitize', $updateValues);
 
+    $errors = [];
+
+    $file = $_FILES['image'] ?? null;
+
+    //Check if file choosed and upload
+
+    if ($file && $file['name']) {
+
+      $image = uploadImage($file);
+
+      if (is_string($image)) {
+        $errors['image'] = $image;
+      } else $updateValues['image'] = $image['path'];
+    }
+
     $requiredFields = ['title', 'description', 'salary', 'email', 'city', 'state'];
 
-    $errors = [];
     foreach ($requiredFields as $field) {
       if (empty($updateValues[$field]) || !Validation::string($updateValues[$field])) {
         $errors[$field] = ucfirst($field) . ' is required';
@@ -232,6 +261,8 @@ class ListingsController
       $updateValues['id'] = $id;
 
       $this->db->query($updateQuery, $updateValues);
+
+      if (file_exists($oldImage) && $updateValues['image']) unlink($oldImage);
 
       redirect('/listings');
     }
